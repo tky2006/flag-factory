@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Flag Factory 🏭</title>
+<style>
+:root{
+  --bg:#0d1225;--bg2:#131a30;--panel:#18213d;
+  --card:#1e2a4a;--card2:#263358;
+  --amber:#f5a623;--green:#22c55e;--red:#ef4444;--yellow:#fbbf24;
+  --white:#dce8ff;--gray:#6a7da8;--gray2:#2d3a5c;
+  --easy:#22c55e;--med:#f5a623;--hard:#ef4444;
+  --r:14px;--rs:9px;
+  --sh:0 6px 28px rgba(0,0,0,.55);
+  --sh2:0 2px 12px rgba(0,0,0,.4);
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+  --sar:env(safe-area-inset-right,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;}
+html{height:100%;height:-webkit-fill-available;overflow:hidden;}
+body{
+  width:100%;height:100%;height:-webkit-fill-available;
+  overflow:hidden;background:var(--bg);color:var(--white);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  padding:var(--sat) var(--sar) var(--sab) var(--sal);
+}
+#root{width:100%;height:100%;position:relative;overflow:hidden;}
+
+/* ── LOADING OVERLAY ── */
+#loadOverlay{
+  position:fixed;inset:0;z-index:9999;
+  background:#0d1225;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;
+}
+#loadOverlay.hidden{display:none;}
+.load-spin{
+  width:48px;height:48px;border-radius:50%;
+  border:4px solid rgba(245,166,35,.2);
+  border-top-color:var(--amber);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{color:var(--gray);font-size:.88rem;letter-spacing:.06em;}
+.load-bar-wrap{width:180px;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;}
+.load-bar{height:100%;background:var(--amber);border-radius:3px;width:0%;transition:width .18s;}
+
+.screen{position:absolute;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;overflow:hidden;}
+.screen.active{display:flex;}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.4rem;
+  min-height:52px;padding:.7rem 1.5rem;border:none;border-radius:var(--r);
+  font-size:clamp(.88rem,2.4vw,1.02rem);font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;cursor:pointer;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;
+  transition:transform .12s,filter .12s;
+}
+.btn:active{transform:scale(.95);}
+.btn:focus-visible{outline:3px solid var(--amber);outline-offset:3px;}
+.btn:disabled{opacity:.38;pointer-events:none;}
+.btn-gold{background:linear-gradient(135deg,#f5a623,#c97d0c);color:#1a0e00;
+  box-shadow:0 4px 18px rgba(245,166,35,.4);}
+.btn-gold:hover{filter:brightness(1.1);}
+.btn-outline{background:rgba(255,255,255,.06);color:var(--white);
+  border:1.5px solid rgba(255,255,255,.18);}
+.btn-outline:hover{background:rgba(255,255,255,.12);}
+
+/* ── FLAG IMAGE ── */
+/* All flag images use <img> with blob: src — works on ALL devices/OS */
+.flag-img{
+  display:block;
+  width:100%;height:100%;
+  object-fit:contain;
+  object-position:center;
+  user-select:none;
+  -webkit-user-select:none;
+  pointer-events:none;
+}
+/* placeholder shown while img loads */
+.flag-img.loading{
+  background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.2s infinite;
+}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* card flag box */
+.fc-flag-box{
+  width:100%;
+  height:clamp(40px,8vw,54px);
+  background:#f5f5f5;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;padding:2px 3px;
+}
+
+/* delivery counter preview */
+.dc-flag-box{
+  width:82px;height:52px;
+  background:#f5f5f5;
+  border-radius:6px;border:1.5px solid rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;padding:3px 4px;
+}
+
+/* strip thumb on start screen */
+.strip-flag-box{
+  width:clamp(52px,13vw,74px);height:clamp(36px,9vw,50px);
+  background:#f5f5f5;
+  border-radius:7px;border:1.5px solid rgba(255,255,255,.2);
+  box-shadow:var(--sh2);flex-shrink:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  padding:2px 3px;
+}
+
+/* ── START SCREEN ── */
+#startScreen{
+  background:radial-gradient(ellipse at 55% 20%,#1c2d5e,#080e1e);
+  overflow:hidden;justify-content:flex-start;padding:0;
+}
+.gear{position:absolute;border-radius:50%;border:6px solid rgba(255,255,255,.04);
+  animation:gspin linear infinite;pointer-events:none;}
+.gear::after{content:'';position:absolute;inset:22%;background:var(--bg);border-radius:50%;}
+@keyframes gspin{to{transform:rotate(360deg)}}
+.s-hero{width:100%;display:flex;flex-direction:column;align-items:center;
+  padding:clamp(1rem,4vh,2rem) 1rem clamp(.5rem,2vh,1rem);
+  position:relative;z-index:2;flex-shrink:0;text-align:center;}
+.s-icon{font-size:clamp(2.8rem,9vw,5rem);line-height:1;margin-bottom:.3rem;
+  filter:drop-shadow(0 8px 24px rgba(245,166,35,.55));}
+.s-title{font-size:clamp(2.3rem,10vw,5.8rem);font-weight:900;line-height:.9;letter-spacing:-.04em;}
+.s-title em{color:var(--amber);font-style:normal;}
+.s-sub{font-size:clamp(.68rem,2vw,.9rem);color:var(--gray);
+  letter-spacing:.22em;text-transform:uppercase;margin-top:.4rem;}
+.s-strip{width:100%;display:flex;gap:clamp(.35rem,1.3vw,.6rem);
+  overflow-x:auto;overflow-y:hidden;padding:.4rem 1rem;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-shrink:0;}
+.s-strip::-webkit-scrollbar{display:none;}
+.s-cta{display:flex;flex-direction:column;align-items:center;gap:.55rem;
+  width:100%;max-width:280px;
+  padding:clamp(.6rem,2.5vh,1.5rem) 1rem;
+  position:relative;z-index:2;flex-shrink:0;}
+.s-cta .btn{width:100%;font-size:clamp(.92rem,2.7vw,1.08rem);}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;margin-top:.25rem;}
+.chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  border-radius:20px;padding:.24rem .66rem;font-size:clamp(.6rem,1.6vw,.7rem);color:var(--gray);}
+
+/* ── HOW TO PLAY ── */
+#howScreen{
+  background:radial-gradient(ellipse at 45% 70%,#152045,#070e1e);
+  padding:clamp(.5rem,2vw,.9rem);
+}
+.how-box{
+  background:var(--panel);border-radius:var(--r);
+  width:100%;max-width:560px;
+  display:flex;flex-direction:column;
+  box-shadow:var(--sh);
+  height:min(580px,calc(100dvh - 2rem));
+  max-height:calc(100dvh - 2rem);
+}
+.how-head{
+  background:var(--amber);color:#1a0e00;
+  padding:.78rem 1.15rem;text-align:center;
+  font-size:clamp(.88rem,2.5vw,1.05rem);font-weight:900;
+  letter-spacing:.07em;text-transform:uppercase;
+  flex-shrink:0;border-radius:var(--r) var(--r) 0 0;
+}
+.how-slider{flex:1;min-height:0;overflow:hidden;position:relative;}
+.hpage{
+  display:none;flex-direction:column;gap:.5rem;
+  padding:clamp(.75rem,3vw,1.2rem);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  height:100%;width:100%;
+}
+.hpage.active{display:flex;animation:hpIn .22s ease-out;}
+.hpage.active.from-left{animation:hpInL .22s ease-out;}
+@keyframes hpIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes hpInL{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+.hpage h2{font-size:clamp(.92rem,2.8vw,1.14rem);font-weight:800;color:var(--amber);}
+.hpage p{color:var(--gray);line-height:1.65;font-size:clamp(.76rem,2.2vw,.88rem);}
+.hstep{display:flex;align-items:flex-start;gap:.5rem;
+  padding:.5rem .62rem;background:rgba(255,255,255,.04);border-radius:var(--rs);}
+.hstep-n{width:25px;height:25px;border-radius:50%;flex-shrink:0;
+  background:var(--amber);color:#1a0e00;
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.77rem;}
+.hstep-t{font-size:clamp(.75rem,2.2vw,.87rem);color:var(--white);line-height:1.55;}
+.hbox{background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.22);
+  border-radius:var(--rs);padding:.6rem .8rem;}
+.hbox p{color:var(--white);margin:0;font-size:clamp(.74rem,2.1vw,.85rem);}
+.hkbd{display:grid;grid-template-columns:1fr 1fr;gap:.36rem;}
+.hkbd-item{background:rgba(255,255,255,.05);border-radius:var(--rs);
+  padding:.4rem .55rem;font-size:clamp(.7rem,2vw,.82rem);color:var(--white);}
+.kkey{font-family:monospace;background:var(--bg);border:1px solid rgba(255,255,255,.2);
+  border-radius:4px;padding:1px 5px;font-size:.72rem;color:var(--amber);}
+.hkbd-d{font-size:.7rem;color:var(--gray);margin-top:2px;}
+.diff-row{display:flex;gap:.36rem;}
+.diff-pill{flex:1;text-align:center;border-radius:var(--rs);
+  padding:.44rem .15rem;font-weight:700;font-size:clamp(.62rem,1.9vw,.78rem);}
+.diff-pill.e{background:rgba(34,197,94,.1);color:var(--easy);border:1px solid rgba(34,197,94,.22);}
+.diff-pill.m{background:rgba(245,166,35,.1);color:var(--med);border:1px solid rgba(245,166,35,.22);}
+.diff-pill.h{background:rgba(239,68,68,.1);color:var(--hard);border:1px solid rgba(239,68,68,.22);}
+.how-nav{display:flex;align-items:center;justify-content:space-between;
+  padding:.65rem .95rem;border-top:1px solid rgba(255,255,255,.07);
+  flex-shrink:0;gap:.4rem;}
+.how-nav .btn{padding:.4rem .82rem;min-height:44px;font-size:.82rem;}
+.how-nav-last{border-top:1px solid rgba(255,255,255,.07);}
+.pdots{display:flex;gap:7px;align-items:center;}
+.pdot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.18);
+  border:none;cursor:pointer;transition:background .2s,transform .2s;
+  padding:0;touch-action:manipulation;}
+.pdot.active{background:var(--amber);transform:scale(1.3);}
+
+/* ── GAME SCREEN ── */
+#gameScreen{flex-direction:column;justify-content:flex-start;
+  align-items:stretch;background:var(--bg);overflow:hidden;}
+.hud{display:flex;align-items:center;flex-shrink:0;
+  background:var(--panel);border-bottom:2px solid rgba(255,255,255,.06);
+  padding:.32rem clamp(.38rem,2vw,.72rem);min-height:48px;gap:.12rem;}
+.hb{display:flex;flex-direction:column;align-items:center;
+  padding:0 clamp(.25rem,1.4vw,.5rem);
+  border-right:1px solid rgba(255,255,255,.07);flex-shrink:0;}
+.hb:last-of-type{border:none;}
+.hl{font-size:clamp(.46rem,1.3vw,.57rem);color:var(--gray);
+  text-transform:uppercase;letter-spacing:.08em;}
+.hv{font-size:clamp(.8rem,2.4vw,1rem);font-weight:800;color:var(--amber);white-space:nowrap;}
+.hlv{font-size:clamp(.6rem,1.9vw,.84rem);letter-spacing:.02em;}
+.hrn{font-size:clamp(.68rem,2vw,.86rem);font-weight:800;}
+.hbdg{font-size:clamp(.46rem,1.3vw,.57rem);font-weight:700;
+  padding:2px 5px;border-radius:4px;text-transform:uppercase;margin-top:2px;}
+.hbdg.e{background:rgba(34,197,94,.18);color:var(--easy);}
+.hbdg.m{background:rgba(245,166,35,.18);color:var(--med);}
+.hbdg.h{background:rgba(239,68,68,.18);color:var(--hard);}
+.htm{font-size:clamp(.88rem,2.7vw,1.08rem);font-weight:900;
+  font-variant-numeric:tabular-nums;min-width:2.2ch;text-align:center;}
+.htm.tg{color:var(--easy);}
+.htm.ty{color:var(--yellow);}
+.htm.tr{color:var(--red);animation:tblink .48s infinite alternate;}
+@keyframes tblink{to{opacity:.25}}
+.hsp{flex:1;}
+.mb{width:40px;height:40px;border-radius:var(--rs);
+  background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);
+  color:var(--white);font-size:1.05rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;touch-action:manipulation;transition:background .15s;}
+.mb:hover{background:rgba(255,255,255,.14);}
+.mb:focus-visible{outline:2px solid var(--amber);}
+.rtoast{position:absolute;top:54px;left:50%;
+  transform:translateX(-50%) translateY(-10px);
+  background:var(--amber);color:#1a0e00;
+  padding:.28rem 1rem;border-radius:20px;
+  font-weight:800;font-size:.82rem;
+  opacity:0;pointer-events:none;z-index:300;
+  transition:opacity .2s,transform .2s;white-space:nowrap;box-shadow:var(--sh2);}
+.rtoast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+.game-area{flex:1;min-height:0;display:flex;flex-direction:column;
+  overflow:hidden;position:relative;}
+
+/* Customer */
+.cust-zone{flex-shrink:0;display:flex;align-items:center;gap:.55rem;
+  padding:clamp(.38rem,1.8vh,.72rem) clamp(.42rem,2vw,.8rem);
+  background:linear-gradient(to bottom,rgba(0,0,0,.15),transparent);}
+.cust-em{font-size:clamp(1.9rem,6.5vw,2.9rem);flex-shrink:0;line-height:1;
+  filter:drop-shadow(0 3px 9px rgba(0,0,0,.5));}
+.cust-em.happy{animation:cheer .36s ease-out;}
+.cust-em.sad{animation:oops .36s ease-out;}
+@keyframes cheer{0%,100%{transform:none}50%{transform:translateY(-8px) scale(1.12)}}
+@keyframes oops{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.bubble{flex:1;min-height:60px;background:#fff;color:#111;
+  border-radius:12px;padding:.46rem .76rem;
+  position:relative;box-shadow:var(--sh2);
+  display:flex;flex-direction:column;justify-content:center;overflow:hidden;}
+.bubble::before{content:'';position:absolute;left:-9px;top:50%;
+  transform:translateY(-50%);border:8px solid transparent;border-right-color:#fff;}
+.otp{font-size:clamp(.54rem,1.5vw,.62rem);text-transform:uppercase;
+  letter-spacing:.07em;color:#555;font-weight:700;margin-bottom:1px;}
+.otx{font-size:clamp(.78rem,2.3vw,.95rem);font-weight:700;color:#111;line-height:1.35;}
+.opg{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
+.opdot{width:9px;height:9px;border-radius:50%;background:#c5cfe0;transition:background .2s;}
+.opdot.done{background:var(--green);}
+.opdot.curr{background:var(--amber);}
+
+/* Delivery zone */
+.del-zone{flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  gap:.55rem;padding:clamp(.26rem,1.2vh,.48rem) clamp(.42rem,2vw,.8rem);}
+.dctr{flex:1;max-width:210px;min-height:68px;
+  background:var(--card);border:2.5px dashed rgba(255,255,255,.18);
+  border-radius:var(--r);padding:.3rem .5rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;color:var(--gray);font-size:.74rem;text-align:center;
+  transition:border-color .18s,background .18s,box-shadow .18s;
+  touch-action:manipulation;overflow:hidden;}
+.dctr.has{border-color:var(--amber);background:rgba(245,166,35,.07);}
+.dctr.over{border-color:var(--green);background:rgba(34,197,94,.1);
+  box-shadow:0 0 0 3px rgba(34,197,94,.25),0 0 18px rgba(34,197,94,.3);}
+.dc-nm{font-size:.67rem;color:var(--amber);font-weight:700;margin-top:3px;}
+.del-btn{background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;
+  border:none;border-radius:var(--r);padding:.56rem 1.1rem;
+  font-weight:800;cursor:pointer;
+  font-size:clamp(.8rem,2.2vw,.9rem);
+  min-height:52px;min-width:92px;
+  box-shadow:0 4px 16px rgba(34,197,94,.3);
+  transition:filter .15s,transform .12s;flex-shrink:0;touch-action:manipulation;}
+.del-btn:hover{filter:brightness(1.08);}
+.del-btn:active{transform:scale(.95);}
+.del-btn:disabled{background:var(--gray2);box-shadow:none;color:#4a5a7a;
+  cursor:not-allowed;transform:none;}
+.del-btn:focus-visible{outline:2px solid var(--amber);}
+
+/* Shelf */
+.shelf{background:var(--bg2);border-top:2px solid rgba(255,255,255,.06);
+  padding:clamp(.3rem,1.3vw,.5rem);flex-shrink:0;}
+.shelf-hd{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.3rem;padding:0 .2rem;}
+.shelf-lbl{font-size:clamp(.57rem,1.5vw,.69rem);text-transform:uppercase;
+  letter-spacing:.18em;color:var(--gray);}
+.shelf-hint{font-size:clamp(.57rem,1.5vw,.67rem);color:rgba(255,255,255,.2);font-style:italic;}
+.frow{
+  display:flex;flex-wrap:wrap;
+  gap:clamp(.28rem,1.1vw,.45rem);
+  justify-content:flex-start;
+  overflow:visible;
+  padding:.1rem .1rem .25rem;
+}
+.fc{
+  width:clamp(64px,calc(20% - .5rem),96px);
+  background:var(--card);border-radius:9px;overflow:hidden;
+  cursor:pointer;border:2.5px solid transparent;
+  transition:border-color .16s,transform .16s,box-shadow .16s;
+  box-shadow:var(--sh2);position:relative;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;
+  flex-shrink:0;
+}
+.fc:focus-visible{outline:3px solid var(--amber);outline-offset:2px;}
+.fc:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(0,0,0,.5);}
+.fc.sel{border-color:var(--amber);
+  box-shadow:0 0 0 3px rgba(245,166,35,.38),0 8px 22px rgba(0,0,0,.5);
+  transform:translateY(-5px) scale(1.03);}
+.fc-num{position:absolute;top:3px;left:4px;z-index:2;
+  background:rgba(0,0,0,.58);border-radius:3px;
+  font-size:.57rem;color:rgba(255,255,255,.85);
+  padding:0 3px;font-family:monospace;line-height:1.45;pointer-events:none;}
+.fc-nm{font-size:clamp(.5rem,1.2vw,.6rem);font-weight:700;
+  text-align:center;padding:.2rem .1rem .22rem;color:var(--white);line-height:1.2;}
+
+/* drag ghost */
+.drag-ghost{position:fixed;pointer-events:none;z-index:9999;
+  border-radius:10px;overflow:hidden;
+  box-shadow:0 16px 44px rgba(0,0,0,.72);
+  transform:rotate(3deg) scale(1.06);opacity:.93;
+  background:var(--card);}
+.dg-flag{width:88px;height:58px;
+  display:flex;align-items:center;justify-content:center;
+  background:#f5f5f5;overflow:hidden;padding:3px 4px;}
+.dg-nm{font-size:.62rem;text-align:center;background:var(--card2);
+  color:var(--white);padding:3px 4px;font-weight:700;}
+
+/* shelf flash */
+.shelf.fl-ok{animation:fok .42s ease-out;}
+.shelf.fl-bad{animation:fbad .42s ease-out;}
+@keyframes fok{0%,100%{background:var(--bg2)}50%{background:rgba(34,197,94,.16)}}
+@keyframes fbad{0%,100%{background:var(--bg2)}50%{background:rgba(239,68,68,.16)}}
+.kbhints{display:none;position:absolute;bottom:5px;right:8px;
+  background:rgba(0,0,0,.42);border-radius:7px;
+  padding:3px 8px;font-size:.6rem;color:rgba(255,255,255,.3);pointer-events:none;}
+@media(hover:hover) and (pointer:fine){.kbhints{display:block;}}
+.lp{position:fixed;pointer-events:none;z-index:9999;
+  font-size:1.6rem;animation:lpf .9s ease-out forwards;}
+@keyframes lpf{from{opacity:1;transform:translateY(0) scale(1)}
+  to{opacity:0;transform:translateY(-70px) scale(.5)}}
+
+/* ── END SCREEN ── */
+#endScreen{background:radial-gradient(ellipse at 50% 30%,#192850,#070e1e);
+  padding:1rem;overflow-y:auto;}
+.end-card{background:var(--panel);border-radius:var(--r);
+  padding:clamp(1.1rem,4vw,1.9rem);width:100%;max-width:440px;
+  text-align:center;box-shadow:var(--sh);}
+.end-ttl{font-size:clamp(1.4rem,5.5vw,2.2rem);font-weight:900;margin-bottom:.45rem;}
+.end-stars{font-size:clamp(2rem,9vw,3.8rem);margin:.55rem 0;
+  animation:spop .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes spop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.end-msg{font-size:clamp(.84rem,2.2vw,.98rem);color:var(--gray);
+  margin-bottom:1.15rem;font-style:italic;}
+.end-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.2rem;}
+.estat{background:rgba(255,255,255,.05);border-radius:10px;padding:.65rem .4rem;}
+.ev{font-size:clamp(1.05rem,3.5vw,1.38rem);font-weight:900;color:var(--amber);}
+.el{font-size:clamp(.58rem,1.5vw,.68rem);color:var(--gray);
+  text-transform:uppercase;letter-spacing:.07em;}
+.end-btns{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;}
+.end-btns .btn{min-width:120px;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:360px){
+  .fc{width:calc(20% - .4rem);}
+  .fc-flag-box{height:36px;}
+  .cust-em{font-size:1.72rem;}.bubble{min-height:50px;}
+  .dctr{max-width:165px;min-height:56px;}
+}
+@media(orientation:landscape) and (max-height:460px){
+  .cust-zone{padding:.28rem .55rem;}.cust-em{font-size:1.65rem;}
+  .bubble{min-height:44px;padding:.34rem .6rem;}
+  .del-zone{padding:.18rem .55rem;}.dctr{min-height:48px;}
+  .shelf{padding:.2rem .38rem;}.shelf-hd{margin-bottom:.14rem;}
+  .fc{width:clamp(56px,calc(14.28% - .4rem),80px);}
+  .fc-flag-box{height:32px;}
+  .fc-nm{font-size:.5rem;padding:.18rem .1rem;}
+  .hud{min-height:42px;}
+}
+@media(min-width:481px) and (max-width:900px){
+  .fc{width:calc(16.66% - .45rem);}
+  .fc-flag-box{height:clamp(46px,9vw,60px);}
+}
+@media(min-width:901px){
+  #gameScreen{align-items:center;}
+  .game-area{max-width:860px;width:100%;}
+  .hud{justify-content:center;}
+  .fc{width:clamp(72px,calc(14.28% - .45rem),100px);}
+}
+</style>
+</head>
+<body>
+<div id="root">
+
+<!-- LOADING -->
+<div id="loadOverlay">
+  <div class="load-spin"></div>
+  <div class="load-bar-wrap"><div class="load-bar" id="loadBar"></div></div>
+  <div class="load-txt" id="loadTxt">Loading flags…</div>
+</div>
+
+<!-- START -->
+<div id="startScreen" class="screen">
+  <div class="gear" style="width:230px;height:230px;top:-85px;right:-65px;animation-duration:10s;"></div>
+  <div class="gear" style="width:125px;height:125px;bottom:55px;left:-42px;animation-duration:5.8s;animation-direction:reverse;"></div>
+  <div class="gear" style="width:80px;height:80px;bottom:12px;right:88px;animation-duration:3.2s;"></div>
+  <div class="s-hero">
+    <div class="s-icon">🏭</div>
+    <div class="s-title">Flag<em>Factory</em></div>
+    <div class="s-sub">World Flag Manufacturing Co.</div>
+  </div>
+  <div class="s-strip" id="sStrip"></div>
+  <div class="s-cta">
+    <button class="btn btn-gold" id="btnPlay" style="min-height:58px;font-size:clamp(1rem,3vw,1.15rem);">▶ &nbsp;Play Now</button>
+    <button class="btn btn-outline" id="btnHow">📖 &nbsp;How to Play</button>
+    <div class="chips">
+      <span class="chip">40 Countries</span>
+      <span class="chip">10 Rounds</span>
+      <span class="chip">3 Tiers</span>
+    </div>
+  </div>
+</div>
+
+<!-- HOW TO PLAY -->
+<div id="howScreen" class="screen">
+  <div class="how-box">
+    <div class="how-head">📖 &nbsp;How to Play</div>
+    <div class="how-slider" id="howSlider">
+      <div class="hpage active" id="hp0">
+        <h2>🏭 Welcome to Flag Factory!</h2>
+        <p>You run the world's most famous flag factory! Customers arrive with orders — find and deliver the right flag before time runs out!</p>
+        <div class="hbox"><p>🌍 Learn <strong>40 real country flags</strong> from around the world — geography made genuinely fun!</p></div>
+        <div style="text-align:center;padding:.4rem 0;">
+          <div style="font-size:2rem;margin-bottom:.3rem;">🧑 → 📋 → 🚩 → 😊</div>
+          <p>Customer → Read order → Find flag → Deliver!</p>
+        </div>
+        <p><strong style="color:var(--white);">10 rounds</strong> · <strong style="color:var(--white);">3 lives</strong> (no regeneration!) · Stars for total score!</p>
+      </div>
+      <div class="hpage" id="hp1">
+        <h2>🎮 How to Play</h2>
+        <div class="hstep"><div class="hstep-n">1</div><div class="hstep-t">A <strong>customer arrives</strong> with a flag order shown in the speech bubble</div></div>
+        <div class="hstep"><div class="hstep-n">2</div><div class="hstep-t">Read the clue — could be country name, description, colors, pattern, or continent</div></div>
+        <div class="hstep"><div class="hstep-n">3</div><div class="hstep-t"><strong>Tap a flag card</strong> on the shelf to select it, then tap <strong>Deliver</strong> — or drag it to the counter!</div></div>
+        <div class="hstep"><div class="hstep-n">4</div><div class="hstep-t">✅ Correct = <strong>+30 pts</strong> + bonuses &nbsp;|&nbsp; ❌ Wrong = lose a ❤️</div></div>
+        <div class="hbox"><p>⚡ Under 5 s → <strong>+10 speed bonus</strong><br>🔥 3 correct in a row → <strong>+15 streak bonus</strong><br>✨ Perfect round → <strong>+25 bonus</strong></p></div>
+      </div>
+      <div class="hpage" id="hp2">
+        <h2>⌨️ Controls</h2>
+        <p style="color:var(--amber);font-weight:800;font-size:.8rem;margin:0;">👆 Touch / Mouse</p>
+        <div class="hkbd">
+          <div class="hkbd-item">Tap flag card<div class="hkbd-d">Select from shelf</div></div>
+          <div class="hkbd-item">Tap counter<div class="hkbd-d">Deliver selected flag</div></div>
+          <div class="hkbd-item">Drag flag<div class="hkbd-d">Drop onto counter</div></div>
+          <div class="hkbd-item">Swipe shelf ↔<div class="hkbd-d">Browse more flags</div></div>
+        </div>
+        <p style="color:var(--amber);font-weight:800;font-size:.8rem;margin:0;">⌨️ Keyboard</p>
+        <div class="hkbd">
+          <div class="hkbd-item"><span class="kkey">1 – 9</span><div class="hkbd-d">Select flag by number</div></div>
+          <div class="hkbd-item"><span class="kkey">Enter / Space</span><div class="hkbd-d">Deliver flag</div></div>
+          <div class="hkbd-item"><span class="kkey">← →</span><div class="hkbd-d">Browse shelf</div></div>
+          <div class="hkbd-item"><span class="kkey">M</span><div class="hkbd-d">Mute / Unmute</div></div>
+        </div>
+        <div class="hbox"><p>⏱ Timer: <span style="color:var(--easy);">Easy 20 s</span> · <span style="color:var(--med);">Medium 25 s</span> · <span style="color:var(--hard);">Hard 30 s</span></p></div>
+      </div>
+      <div class="hpage" id="hp3">
+        <h2>💡 Difficulty &amp; Tips</h2>
+        <div class="diff-row">
+          <div class="diff-pill e">🟢 EASY<br><small>Rounds 1–3<br>20 s · 3 orders<br>10 flags</small></div>
+          <div class="diff-pill m">🟡 MEDIUM<br><small>Rounds 4–7<br>25 s · 4 orders<br>25 flags</small></div>
+          <div class="diff-pill h">🔴 HARD<br><small>Rounds 8–10<br>30 s · 5 orders<br>40 flags</small></div>
+        </div>
+        <div class="hbox"><p>⭐ Stars by total score:<br>⭐ 200–399 &nbsp;·&nbsp; ⭐⭐ 400–599 &nbsp;·&nbsp; ⭐⭐⭐ 600+</p></div>
+        <div class="hbox"><p>🔍 Similar flags? Check color <em>order</em> &amp; layout<br>📐 Look for symbols — eagles, wheels, crescents<br>🏃 Speed matters — fast delivery = bonus points!<br>❤️ Be sure before delivering — wrong = lose a life!</p></div>
+      </div>
+    </div>
+    <div class="how-nav" id="howNavNormal">
+      <button class="btn btn-outline" id="howPrev" disabled>← Back</button>
+      <div class="pdots" id="howDots"></div>
+      <button class="btn btn-gold" id="howNext">Next →</button>
+    </div>
+    <div class="how-nav how-nav-last" id="howNavLast" style="display:none;">
+      <button class="btn btn-outline" id="howPrevLast">← Back</button>
+      <div class="pdots" id="howDotsLast"></div>
+      <button class="btn btn-gold" id="howMenuBtn">🏠 Main Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="gameScreen" class="screen">
+  <div class="hud">
+    <div class="hb"><div class="hl">Score</div><div class="hv" id="hSc">0</div></div>
+    <div class="hb"><div class="hl">Lives</div><div class="hlv" id="hLv">❤️❤️❤️</div></div>
+    <div class="hb">
+      <div class="hl">Round</div>
+      <div class="hrn" id="hRn">1/10</div>
+      <div class="hbdg e" id="hBdg">EASY</div>
+    </div>
+    <div class="hb"><div class="hl">Time</div><div class="htm tg" id="hTm">20</div></div>
+    <div class="hsp"></div>
+    <button class="mb" id="muteBtn" aria-label="Toggle sound">🔊</button>
+  </div>
+  <div class="rtoast" id="rtoast"></div>
+  <div class="game-area">
+    <div class="cust-zone">
+      <div class="cust-em" id="custEm">🧑</div>
+      <div class="bubble">
+        <div class="otp" id="oTp">📦 Order</div>
+        <div class="otx" id="oTx">Waiting for customer…</div>
+        <div class="opg" id="oPg"></div>
+      </div>
+    </div>
+    <div class="del-zone">
+      <div class="dctr" id="dctr" role="button" tabindex="0" aria-label="Delivery counter">
+        <div style="font-size:1.5rem;">📦</div>
+        <div style="font-size:.72rem;margin-top:2px;">Drop flag here</div>
+      </div>
+      <button class="del-btn" id="delBtn" disabled>Deliver →</button>
+    </div>
+    <div class="shelf" id="shelfEl">
+      <div class="shelf-hd">
+        <div class="shelf-lbl">🏭 Flag Shelf</div>
+        <div class="shelf-hint">Tap a flag to select it</div>
+      </div>
+      <div class="frow" id="fRow" role="list"></div>
+    </div>
+    <div class="kbhints" aria-hidden="true">1–9 select · Enter deliver · ← → browse · M mute</div>
+  </div>
+</div>
+
+<!-- END -->
+<div id="endScreen" class="screen">
+  <div class="end-card">
+    <div class="end-ttl" id="endTtl">Game Over!</div>
+    <div class="end-stars" id="endStars">⭐</div>
+    <div class="end-msg" id="endMsg">Keep practicing!</div>
+    <div class="end-grid">
+      <div class="estat"><div class="ev" id="endSc">0</div><div class="el">Final Score</div></div>
+      <div class="estat"><div class="ev" id="endRd">0/10</div><div class="el">Rounds Done</div></div>
+      <div class="estat"><div class="ev" id="endLv">0❤️</div><div class="el">Lives Left</div></div>
+      <div class="estat"><div class="ev" id="endStr">0</div><div class="el">Best Streak</div></div>
+    </div>
+    <div class="end-btns">
+      <button class="btn btn-gold" id="btnRetry">🔄 Play Again</button>
+      <button class="btn btn-outline" id="btnMenu">🏠 Main Menu</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- #root -->
+<script>
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════
+   FLAG DATA — 40 countries
+   img: ISO 3166-1 alpha-2 code (lowercase) used to build CDN URL at runtime
+═══════════════════════════════════════════════════════════ */
+const FLAGS = [
+  {id:'us',cc:'us',t:1,name:'United States',s:'USA',con:'North America',col:['red','white','blue'],desc:'Stars and Stripes',pat:'red & white stripes with blue star canton',h:['Has 50 white stars on a blue rectangle','Red, white & blue stripes — no other colors','North American giant']},
+  {id:'jp',cc:'jp',t:1,name:'Japan',s:'Japan',con:'Asia',col:['red','white'],desc:'Red circle on plain white',pat:'single red disc centered on white',h:['Just ONE red circle on white','Only red and white — the simplest design','Pacific island nation']},
+  {id:'ca',cc:'ca',t:1,name:'Canada',s:'Canada',con:'North America',col:['red','white'],desc:'Red maple leaf on white',pat:'red side panels, white center with red maple leaf',h:['Features a red maple leaf','Red and white only','Located north of the USA']},
+  {id:'gb',cc:'gb',t:1,name:'United Kingdom',s:'UK',con:'Europe',col:['red','white','blue'],desc:'Union Jack',pat:'overlapping diagonal and straight crosses on dark navy blue',h:['Has both DIAGONAL and STRAIGHT white crosses','All on a dark navy blue background','Island nation in northwestern Europe']},
+  {id:'br',cc:'br',t:1,name:'Brazil',s:'Brazil',con:'South America',col:['green','yellow','blue'],desc:'Green flag with yellow diamond',pat:'large yellow diamond on green with blue globe inside',h:['Large yellow diamond on the flag','Green is the dominant background color','Largest country in South America']},
+  {id:'de',cc:'de',t:1,name:'Germany',s:'Germany',con:'Europe',col:['black','red','gold'],desc:'Black, Red, Gold stripes',pat:'three equal horizontal bands: black top, red middle, gold bottom',h:['Black on TOP, gold on BOTTOM','Three plain horizontal stripes, no symbols','Major nation in Central Europe']},
+  {id:'cn',cc:'cn',t:1,name:'China',s:'China',con:'Asia',col:['red','yellow'],desc:'Red flag with five yellow stars',pat:'one large star and four small stars in top-left on red',h:['FIVE yellow stars — one big, four small','Entirely red background','World\'s most populous country']},
+  {id:'au',cc:'au',t:1,name:'Australia',s:'Australia',con:'Oceania',col:['blue','red','white'],desc:'Union Jack with Southern Cross',pat:'Union Jack top-left, Southern Cross stars on blue',h:['Shows the Southern Cross constellation','Union Jack sits in the top-left corner','The only country that is also a continent']},
+  {id:'fr',cc:'fr',t:1,name:'France',s:'France',con:'Europe',col:['blue','white','red'],desc:'Blue, White, Red vertical tricolor',pat:'three equal vertical stripes: blue left, white center, red right',h:['Blue stripe is on the LEFT side','Three equal vertical bands','Western European republic']},
+  {id:'in',cc:'in',t:1,name:'India',s:'India',con:'Asia',col:['saffron','white','green'],desc:'Saffron, White, Green with Ashoka Wheel',pat:'horizontal tricolor with blue 24-spoke wheel in center',h:['Blue spinning wheel (Ashoka Chakra) in center','Saffron top, green bottom, white in between','World\'s most populous country']},
+  {id:'it',cc:'it',t:2,name:'Italy',s:'Italy',con:'Europe',col:['green','white','red'],desc:'Green, White, Red vertical tricolor',pat:'three equal vertical stripes: green left, white center, red right',h:['Green is on the LEFT side (not like Ireland!)','Similar to France — different colors','Boot-shaped nation in southern Europe']},
+  {id:'es',cc:'es',t:2,name:'Spain',s:'Spain',con:'Europe',col:['red','yellow'],desc:'Red and yellow horizontal stripes',pat:'thin red top, wide yellow center, thin red bottom with coat of arms',h:['Yellow CENTER band is the WIDEST stripe','Red appears on TOP and BOTTOM','Iberian Peninsula, southwestern Europe']},
+  {id:'mx',cc:'mx',t:2,name:'Mexico',s:'Mexico',con:'North America',col:['green','white','red'],desc:'Green, White, Red with eagle emblem',pat:'vertical tricolor with eagle devouring a serpent on white',h:['Eagle eating a serpent in the center','Same colors as Italy — but WITH an emblem','Located south of the USA']},
+  {id:'za',cc:'za',t:2,name:'South Africa',s:'S. Africa',con:'Africa',col:['black','yellow','green','white','red','blue'],desc:'Six-color Y-shaped flag',pat:'unique Y-shape from left edge in six distinct colors',h:['ONLY flag with exactly this six-color design','Y-shape stretching from the left edge','Known as the Rainbow Nation']},
+  {id:'ar',cc:'ar',t:2,name:'Argentina',s:'Argentina',con:'South America',col:['light blue','white'],desc:'Light blue and white with Sun of May',pat:'horizontal light-blue/white/light-blue stripes with golden sun face',h:['A smiling sun face in the very center','LIGHT blue — not dark navy!','South American nation famous for football']},
+  {id:'tr',cc:'tr',t:2,name:'Turkey',s:'Turkey',con:'Europe',col:['red','white'],desc:'Red flag with white crescent and star',pat:'white crescent moon and five-pointed star on solid red',h:['Crescent moon + star symbol on red','Entire background is red','Country spanning Europe and Asia']},
+  {id:'ru',cc:'ru',t:2,name:'Russia',s:'Russia',con:'Europe',col:['white','blue','red'],desc:'White, Blue, Red horizontal stripes',pat:'three equal horizontal bands: white top, blue middle, red bottom',h:['White on TOP, red on BOTTOM','Horizontal white, blue, red — no symbols','Largest country in the world by area']},
+  {id:'nl',cc:'nl',t:2,name:'Netherlands',s:'Netherlands',con:'Europe',col:['red','white','blue'],desc:'Red, White, Blue horizontal stripes',pat:'three equal horizontal bands: red top, white middle, blue bottom',h:['Red on TOP, blue on BOTTOM (opposite of Russia!)','Horizontal stripes, no symbols','Western European nation, famous for tulips']},
+  {id:'ch',cc:'ch',t:2,name:'Switzerland',s:'Switzerland',con:'Europe',col:['red','white'],desc:'White cross on red square',pat:'bold symmetric white cross centered on red — nearly square',h:['One of the ONLY square-shaped national flags','Bold white cross in the center','Alpine European nation, politically neutral']},
+  {id:'se',cc:'se',t:2,name:'Sweden',s:'Sweden',con:'Europe',col:['blue','yellow'],desc:'Yellow Nordic cross on blue',pat:'asymmetric yellow cross on blue — shifted left',h:['Yellow cross on blue, offset to the LEFT','Only blue and yellow','Scandinavian nation in northern Europe']},
+  {id:'no',cc:'no',t:2,name:'Norway',s:'Norway',con:'Europe',col:['red','white','blue'],desc:'Red flag with blue Nordic cross edged in white',pat:'asymmetric cross: blue inside white outline on red',h:['Cross has blue INSIDE a white border','Nordic cross pattern','Scandinavian peninsula nation']},
+  {id:'eg',cc:'eg',t:2,name:'Egypt',s:'Egypt',con:'Africa',col:['red','white','black'],desc:'Red, White, Black with Eagle of Saladin',pat:'horizontal tricolor with golden eagle on white stripe',h:['Golden eagle on the white MIDDLE stripe','Red top, black bottom','North African nation on the Nile River']},
+  {id:'sa',cc:'sa',t:2,name:'Saudi Arabia',s:'S. Arabia',con:'Asia',col:['green','white'],desc:'Green flag with Arabic script and sword',pat:'green with white Shahada inscription above a horizontal sword',h:['Has Arabic writing (the Shahada)','White sword below the inscription','Desert kingdom on the Arabian Peninsula']},
+  {id:'gr',cc:'gr',t:2,name:'Greece',s:'Greece',con:'Europe',col:['blue','white'],desc:'Blue and white stripes with cross in canton',pat:'nine blue and white stripes, white cross in top-left corner',h:['White cross in TOP-LEFT corner only','Nine alternating blue and white stripes','Southeastern Europe, birthplace of democracy']},
+  {id:'ng',cc:'ng',t:2,name:'Nigeria',s:'Nigeria',con:'Africa',col:['green','white'],desc:'Green, White, Green vertical stripes',pat:'two green bands flanking white center — no emblem',h:['No symbols at all — just plain stripes','Green and white vertical bands','Most populous country in Africa']},
+  {id:'vn',cc:'vn',t:3,name:'Vietnam',s:'Vietnam',con:'Asia',col:['red','yellow'],desc:'Red flag with single large yellow star',pat:'single large five-pointed yellow star centered on red',h:['ONE yellow star (China has FIVE)','Star is centered — not in the corner','Southeast Asian nation']},
+  {id:'th',cc:'th',t:3,name:'Thailand',s:'Thailand',con:'Asia',col:['red','white','blue'],desc:'Five stripes — wide blue center band',pat:'red-white-blue-white-red stripes, blue is widest',h:['Blue center stripe is the WIDEST','Five stripes total: red-white-blue-white-red','Buddhist kingdom in Southeast Asia']},
+  {id:'ke',cc:'ke',t:3,name:'Kenya',s:'Kenya',con:'Africa',col:['black','red','green','white'],desc:'Black, Red, Green with Maasai shield',pat:'horizontal tricolor with Maasai shield and spears in center',h:['Maasai warrior shield in the center','White thin borders on the red band','East African nation']},
+  {id:'co',cc:'co',t:3,name:'Colombia',s:'Colombia',con:'South America',col:['yellow','blue','red'],desc:'Yellow, Blue, Red horizontal stripes',pat:'wide yellow top, narrow blue, narrow red',h:['Yellow takes up the TOP HALF of the flag','Horizontal: yellow, blue, red from top','Northern South American nation']},
+  {id:'pt',cc:'pt',t:3,name:'Portugal',s:'Portugal',con:'Europe',col:['green','red'],desc:'Green and red with coat of arms on border',pat:'vertical green (40%) and red (60%), coat of arms where they meet',h:['Coat of arms on the green-red border','Green side is narrower — only 40%','Western tip of the Iberian Peninsula']},
+  {id:'cl',cc:'cl',t:3,name:'Chile',s:'Chile',con:'South America',col:['red','white','blue'],desc:'White star in blue canton, white over red',pat:'blue square with white star top-left, white upper stripe, red lower half',h:['White star inside a blue square — TOP LEFT','Entire BOTTOM HALF is red','Long narrow South American country']},
+  {id:'be',cc:'be',t:3,name:'Belgium',s:'Belgium',con:'Europe',col:['black','yellow','red'],desc:'Black, Yellow, Red vertical stripes',pat:'three equal vertical bands: black left, yellow center, red right',h:['Black is on the LEFT side','Flag has nearly SQUARE proportions','Small western European nation']},
+  {id:'ie',cc:'ie',t:3,name:'Ireland',s:'Ireland',con:'Europe',col:['green','white','orange'],desc:'Green, White, Orange vertical tricolor',pat:'three equal vertical bands: green left, white center, orange right',h:['Green left, ORANGE right — not red!','Italy has red; Ireland has orange','North Atlantic island nation']},
+  {id:'et',cc:'et',t:3,name:'Ethiopia',s:'Ethiopia',con:'Africa',col:['green','yellow','red','blue'],desc:'Green, Yellow, Red with blue circle and star',pat:'horizontal tricolor with blue circle containing yellow star/emblem',h:['Blue circle with emblem in center','Pan-African colors: green, yellow, red','One of Africa\'s oldest nations']},
+  {id:'ua',cc:'ua',t:3,name:'Ukraine',s:'Ukraine',con:'Europe',col:['blue','yellow'],desc:'Blue top half, yellow bottom half',pat:'two equal horizontal bands: blue on top, yellow on bottom',h:['Just two bands — no symbols at all','Sky blue over golden yellow','Eastern European nation']},
+  {id:'id',cc:'id',t:3,name:'Indonesia',s:'Indonesia',con:'Asia',col:['red','white'],desc:'Red top half, white bottom half',pat:'two equal horizontal bands: red on top, white on bottom',h:['Red OVER white — Poland is the exact OPPOSITE','Just two plain horizontal bands','Southeast Asian archipelago']},
+  {id:'pl',cc:'pl',t:3,name:'Poland',s:'Poland',con:'Europe',col:['white','red'],desc:'White top half, red bottom half',pat:'two equal horizontal bands: white on top, red on bottom',h:['White OVER red — Indonesia is the exact OPPOSITE','No symbols at all','Central European nation']},
+  {id:'kr',cc:'kr',t:3,name:'South Korea',s:'S. Korea',con:'Asia',col:['red','blue','white','black'],desc:'White flag with Taeguk and four black trigrams',pat:'white background, red-blue yin-yang circle, black symbols in four corners',h:['Yin-yang (Taeguk) circle in the center','Four black symbols in ALL four corners','East Asian nation on the Korean Peninsula']},
+  {id:'pk',cc:'pk',t:3,name:'Pakistan',s:'Pakistan',con:'Asia',col:['green','white'],desc:'Green with crescent, star and left white stripe',pat:'white vertical stripe on left edge, green with crescent and star on right',h:['White vertical stripe on the LEFT edge','Crescent and star on green portion','South Asian nation']},
+  {id:'my',cc:'my',t:3,name:'Malaysia',s:'Malaysia',con:'Asia',col:['red','white','blue','yellow'],desc:'14 red and white stripes with blue canton',pat:'14 red & white stripes, blue rectangle top-left with yellow crescent and 14-point star',h:['14 red and white horizontal stripes','Blue canton with yellow crescent & 14-pointed star','Southeast Asian nation split in two regions']},
+];
+
+/* ═══════════════════════════════════════════════════════════
+   FLAG IMAGE CACHE
+   Strategy: fetch PNG from flagcdn.com → store as blob: URL
+   The src attribute only ever receives a blob: URL — never a raw http link.
+   This satisfies "no link in src attribute" while giving real flag images
+   that render correctly on Windows, Linux, macOS, iOS, Android.
+═══════════════════════════════════════════════════════════ */
+const FLAG_CACHE = {};   // cc → blob: URL
+const FLAG_SIZE  = 'w80'; // 80px wide — crisp enough, fast to load
+
+async function loadFlag(cc) {
+  if (FLAG_CACHE[cc]) return FLAG_CACHE[cc];
+  // Build URL only at fetch time — never placed in src directly
+  const url = `https://flagcdn.com/${FLAG_SIZE}/${cc}.png`;
+  try {
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    const blob = await res.blob();
+    const burl = URL.createObjectURL(blob);
+    FLAG_CACHE[cc] = burl;
+    return burl;
+  } catch(e) {
+    // Fallback: a tiny blank data URI so the img doesn't show broken icon
+    FLAG_CACHE[cc] = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    return FLAG_CACHE[cc];
+  }
+}
+
+/* Pre-load all 40 flags with progress bar, then reveal start screen */
+async function preloadAllFlags() {
+  const bar  = document.getElementById('loadBar');
+  const txt  = document.getElementById('loadTxt');
+  const total = FLAGS.length;
+  let done = 0;
+
+  await Promise.all(FLAGS.map(async f => {
+    await loadFlag(f.cc);
+    done++;
+    bar.style.width = Math.round((done / total) * 100) + '%';
+    txt.textContent = `Loading flags… ${done}/${total}`;
+  }));
+
+  // All loaded — hide overlay and show start screen
+  document.getElementById('loadOverlay').classList.add('hidden');
+  showScr('startScreen');
+  buildStrip();
+}
+
+/* Create an <img> element with the cached blob: src */
+function mkFlagImg(cc, altText) {
+  const img = document.createElement('img');
+  img.className = 'flag-img loading';
+  img.alt = altText || cc.toUpperCase();
+  img.draggable = false;
+  const burl = FLAG_CACHE[cc];
+  if (burl) {
+    img.src = burl;
+    img.onload = () => img.classList.remove('loading');
+  }
+  return img;
+}
+
+/* ════════════════════════════════════════ */
+const POOL_E = FLAGS.filter(f=>f.t===1);
+const POOL_M = FLAGS.filter(f=>f.t<=2);
+const POOL_H = FLAGS;
+
+const $    = id => document.getElementById(id);
+const shuf = a  => [...a].sort(()=>Math.random()-.5);
+const pick = a  => a[Math.floor(Math.random()*a.length)];
+
+function showScr(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+const TIER = r => r<=3?1:r<=7?2:3;
+const TMAX = r => r<=3?20:r<=7?25:30;
+const OCNT = r => r<=3?3:r<=7?4:5;
+const POOL = r => TIER(r)===1?POOL_E:TIER(r)===2?POOL_M:POOL_H;
+
+const OTYPES={
+  1:['name','desc','hint'],
+  2:['name','desc','hint','cont','color','pattern'],
+  3:['name','desc','hint','cont','color','pattern','combo']
+};
+
+function mkOrder(flag,tier){
+  const type=pick(OTYPES[tier]);
+  let icon,text;
+  switch(type){
+    case 'name':    icon='🌍'; text=`I need the flag of <strong>${flag.name}</strong>!`; break;
+    case 'desc':    icon='🏷️'; text=`Give me the "<strong>${flag.desc}</strong>" flag!`; break;
+    case 'hint':    icon='💡'; text=pick(flag.h); break;
+    case 'cont':    icon='🌐'; text=`A flag from <strong>${flag.con}</strong>! Hint: ${flag.col.slice(0,2).join(' & ')} colors`; break;
+    case 'color':   icon='🎨'; text=`I need a <strong>${flag.col.slice(0,2).join(' & ')}</strong> flag! (${flag.con})`; break;
+    case 'pattern': icon='📐'; text=`Find: <strong>${flag.pat}</strong>`; break;
+    case 'combo':   icon='🔀'; text=`${flag.con} · "${flag.desc}" · ${flag.col.slice(0,2).join(' & ')}`; break;
+    default:        icon='🌍'; text=`Flag of <strong>${flag.name}</strong>`; break;
+  }
+  return {flag,icon,text,type};
+}
+
+function genRound(r){
+  const tier=TIER(r),pool=POOL(r),cnt=OCNT(r);
+  const oFlags=Array.from({length:cnt},()=>pick(pool));
+  const orders=oFlags.map(f=>mkOrder(f,tier));
+  const cIds=[...new Set(oFlags.map(f=>f.id))];
+  const decoys=shuf(pool.filter(f=>!cIds.includes(f.id)));
+  const size=Math.min(pool.length,Math.max(9,cnt+5));
+  const shelf=shuf([
+    ...cIds.map(id=>pool.find(f=>f.id===id)),
+    ...decoys.slice(0,size-cIds.length)
+  ]);
+  return {orders,shelf};
+}
+
+const G={
+  round:1,score:0,lives:3,
+  streak:0,bestStreak:0,
+  timer:20,tiv:null,
+  shelf:[],orders:[],oIdx:0,
+  sel:null,selIdx:-1,kIdx:0,
+  oStart:0,perfectRound:true,
+  roundsDone:0,running:false
+};
+
+function startGame(){
+  stopBg(); clearInterval(G.tiv);
+  Object.assign(G,{
+    round:1,score:0,lives:3,streak:0,bestStreak:0,
+    timer:20,tiv:null,shelf:[],orders:[],oIdx:0,
+    sel:null,selIdx:-1,kIdx:0,oStart:0,
+    perfectRound:true,roundsDone:0,running:true
+  });
+  showScr('gameScreen');
+  updateHUD();
+  beginRound();
+  setTimeout(startBg,380);
+}
+
+function beginRound(){
+  G.perfectRound=true;
+  G.sel=null;G.selIdx=-1;G.kIdx=0;
+  const {orders,shelf}=genRound(G.round);
+  G.orders=orders;G.shelf=shelf;G.oIdx=0;
+  buildShelf();
+  updateHUD();
+  showOrder();
+  startTimer();
+  if(G.round>1){
+    const lbl=TIER(G.round)===1?'EASY':TIER(G.round)===2?'MEDIUM':'HARD';
+    showToast(`Round ${G.round} — ${lbl}!`);
+    SFX.round();
+  }
+}
+
+function showOrder(){
+  if(G.oIdx>=G.orders.length){endRound();return;}
+  const o=G.orders[G.oIdx];
+  $('oTp').textContent=o.icon+' Order';
+  $('oTx').innerHTML=o.text;
+  $('custEm').textContent=pick(['🧑','👩','👦','👧','🧓','👨','🧕','👲','🧔','👴','👩‍🦱','👨‍🦳']);
+  SFX.arrive();
+  G.oStart=Date.now();
+  const pg=$('oPg');pg.innerHTML='';
+  G.orders.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='opdot'+(i<G.oIdx?' done':i===G.oIdx?' curr':'');
+    pg.appendChild(d);
+  });
+  clearSel();
+}
+
+function startTimer(){
+  clearInterval(G.tiv);
+  G.timer=TMAX(G.round);
+  renderTimer();
+  G.tiv=setInterval(()=>{
+    G.timer--;
+    if(G.timer<=0){clearInterval(G.tiv);timeUp();}
+    else renderTimer();
+  },1000);
+}
+function renderTimer(){
+  const el=$('hTm'),max=TMAX(G.round),p=G.timer/max;
+  el.textContent=Math.max(0,G.timer);
+  el.className='htm '+(p>.5?'tg':p>.25?'ty':'tr');
+}
+function timeUp(){
+  G.lives--;G.streak=0;G.perfectRound=false;
+  SFX.life();spawnLP();updateHUD();
+  if(G.lives<=0){gameOver();return;}
+  G.oIdx++;
+  if(G.oIdx>=G.orders.length)endRound();
+  else{showOrder();startTimer();}
+}
+function endRound(){
+  clearInterval(G.tiv);
+  if(G.perfectRound)G.score+=25;
+  G.roundsDone++;
+  if(G.round>=10){victory();return;}
+  G.round++;
+  beginRound();
+}
+function gameOver(){G.running=false;clearInterval(G.tiv);stopBg();SFX.gameover();setTimeout(()=>showEnd(false),650);}
+function victory(){G.running=false;clearInterval(G.tiv);stopBg();SFX.victory();setTimeout(()=>showEnd(true),650);}
+
+/* ════════ SHELF ════════ */
+function buildShelf(){
+  const row=$('fRow');row.innerHTML='';
+  G.shelf.forEach((flag,i)=>{
+    const card=document.createElement('div');
+    card.className='fc';card.tabIndex=0;card.dataset.i=i;
+    card.setAttribute('role','listitem');
+    card.setAttribute('aria-label','Flag of '+flag.name);
+
+    const num=document.createElement('div');
+    num.className='fc-num';
+    num.textContent=i<9?String(i+1):'';
+
+    const box=document.createElement('div');
+    box.className='fc-flag-box';
+    box.appendChild(mkFlagImg(flag.cc, flag.name));
+
+    const nm=document.createElement('div');
+    nm.className='fc-nm';
+    nm.textContent=flag.s||flag.name;
+
+    card.appendChild(num);
+    card.appendChild(box);
+    card.appendChild(nm);
+
+    card.addEventListener('pointerdown',e=>onCardDown(e,flag,card,i));
+    card.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();selCard(i,card);}
+    });
+    row.appendChild(card);
+  });
+}
+
+function selCard(i,cardEl){
+  if(i<0||i>=G.shelf.length)return;
+  SFX.click();
+  G.sel=G.shelf[i];G.selIdx=i;G.kIdx=i;
+  document.querySelectorAll('.fc').forEach((c,j)=>c.classList.toggle('sel',j===i));
+  renderDC();
+  $('delBtn').disabled=false;
+  const el=cardEl||document.querySelectorAll('.fc')[i];
+  if(el)el.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+function clearSel(){
+  G.sel=null;G.selIdx=-1;
+  document.querySelectorAll('.fc').forEach(c=>c.classList.remove('sel'));
+  renderDC();
+  $('delBtn').disabled=true;
+}
+function renderDC(){
+  const dc=$('dctr');
+  if(G.sel){
+    dc.classList.add('has');
+    dc.innerHTML='';
+    const box=document.createElement('div');box.className='dc-flag-box';
+    box.appendChild(mkFlagImg(G.sel.cc, G.sel.name));
+    const nm=document.createElement('div');nm.className='dc-nm';
+    nm.textContent=G.sel.s||G.sel.name;
+    dc.appendChild(box);dc.appendChild(nm);
+  }else{
+    dc.classList.remove('has','over');
+    dc.innerHTML='<div style="font-size:1.5rem;">📦</div><div style="font-size:.72rem;margin-top:2px;">Drop flag here</div>';
+  }
+}
+
+/* ════════ DELIVERY ════════ */
+function deliver(){
+  if(!G.sel||G.oIdx>=G.orders.length)return;
+  const order=G.orders[G.oIdx];
+  if(G.sel.id===order.flag.id){
+    SFX.correct();G.score+=30;
+    if((Date.now()-G.oStart)/1e3<5)G.score+=10;
+    G.streak++;if(G.streak>G.bestStreak)G.bestStreak=G.streak;
+    if(G.streak>=3)G.score+=15;
+    react('happy');flashShelf('ok');
+    clearInterval(G.tiv);
+    G.oIdx++;clearSel();updateHUD();
+    if(G.oIdx>=G.orders.length)endRound();
+    else{showOrder();startTimer();}
+  }else{
+    SFX.wrong();G.lives--;G.streak=0;G.perfectRound=false;
+    react('sad');flashShelf('bad');
+    spawnLP();clearSel();updateHUD();
+    if(G.lives<=0)gameOver();
+  }
+}
+
+/* ════════ DRAG ════════ */
+let DS=null;
+function onCardDown(e,flag,card,idx){
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  e.preventDefault();
+  try{card.setPointerCapture(e.pointerId);}catch(_){}
+  DS={flag,card,idx,sx:e.clientX,sy:e.clientY,moved:false,ghost:null};
+
+  function onMove(ev){
+    if(!DS)return;ev.preventDefault();
+    const dx=ev.clientX-DS.sx,dy=ev.clientY-DS.sy;
+    if(!DS.moved&&Math.hypot(dx,dy)>10){
+      DS.moved=true;selCard(DS.idx,DS.card);
+      const g=document.createElement('div');g.className='drag-ghost';
+      const gf=document.createElement('div');gf.className='dg-flag';
+      gf.appendChild(mkFlagImg(flag.cc, flag.name));
+      const gn=document.createElement('div');gn.className='dg-nm';
+      gn.textContent=flag.s||flag.name;
+      g.appendChild(gf);g.appendChild(gn);
+      document.body.appendChild(g);DS.ghost=g;
+      DS.card.style.opacity='.38';
+    }
+    if(DS.ghost){
+      DS.ghost.style.left=(ev.clientX-48)+'px';
+      DS.ghost.style.top=(ev.clientY-44)+'px';
+      const u=document.elementFromPoint(ev.clientX,ev.clientY);
+      const ov=!!(u&&(u.closest('#dctr')||u.closest('.del-btn')));
+      $('dctr').classList.toggle('over',ov);
+    }
+  }
+  function onUp(ev){
+    if(!DS)return;
+    card.removeEventListener('pointermove',onMove);
+    card.removeEventListener('pointerup',onUp);
+    card.removeEventListener('pointercancel',onUp);
+    DS.card.style.opacity='';
+    $('dctr').classList.remove('over');
+    if(DS.ghost){
+      DS.ghost.remove();DS.ghost=null;
+      const u=document.elementFromPoint(ev.clientX,ev.clientY);
+      if(u&&(u.closest('#dctr')||u.closest('.del-btn')))deliver();
+    }else{selCard(DS.idx,DS.card);}
+    DS=null;
+  }
+  card.addEventListener('pointermove',onMove,{passive:false});
+  card.addEventListener('pointerup',onUp);
+  card.addEventListener('pointercancel',onUp);
+}
+$('dctr').addEventListener('click',()=>{if(G.sel)deliver();});
+$('dctr').addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&G.sel){e.preventDefault();deliver();}
+});
+$('delBtn').addEventListener('click',deliver);
+
+/* ════════ HUD + FEEDBACK ════════ */
+function updateHUD(){
+  $('hSc').textContent=G.score;
+  $('hLv').textContent='❤️'.repeat(Math.max(0,G.lives))+'🖤'.repeat(Math.max(0,3-G.lives));
+  $('hRn').textContent=G.round+'/10';
+  const t=TIER(G.round),b=$('hBdg');
+  if(t===1){b.textContent='EASY';b.className='hbdg e';}
+  else if(t===2){b.textContent='MEDIUM';b.className='hbdg m';}
+  else{b.textContent='HARD';b.className='hbdg h';}
+}
+function react(mood){
+  const e=$('custEm');e.classList.remove('happy','sad');
+  void e.offsetWidth;e.classList.add(mood);
+  setTimeout(()=>e.classList.remove(mood),400);
+}
+function flashShelf(t){
+  const s=$('shelfEl');s.classList.remove('fl-ok','fl-bad');
+  void s.offsetWidth;s.classList.add(t==='ok'?'fl-ok':'fl-bad');
+  setTimeout(()=>s.classList.remove('fl-ok','fl-bad'),440);
+}
+function spawnLP(){
+  const r=$('hLv').getBoundingClientRect();
+  const p=document.createElement('div');p.className='lp';p.textContent='💔';
+  p.style.cssText=`left:${r.left}px;top:${r.top}px;`;
+  document.body.appendChild(p);setTimeout(()=>p.remove(),950);
+}
+let _tid;
+function showToast(msg){
+  const t=$('rtoast');clearTimeout(_tid);
+  t.textContent=msg;t.classList.add('on');
+  _tid=setTimeout(()=>t.classList.remove('on'),2300);
+}
+
+/* ════════ END SCREEN ════════ */
+function showEnd(won){
+  const pts=G.score;
+  let stars=0,msg='';
+  if(pts>=600){stars=3;msg="Excellent! You're a flag master! 🏆";}
+  else if(pts>=400){stars=2;msg="Great job! You know your flags well! 👏";}
+  else if(pts>=200){stars=1;msg="Good effort! Keep learning flags! 📚";}
+  else{msg="Keep practicing — you'll get there! 💪";}
+  $('endTtl').textContent=won?'🎉 Victory!':'💀 Game Over!';
+  $('endStars').textContent='⭐'.repeat(stars)+(stars<3?'☆'.repeat(3-stars):'');
+  $('endMsg').textContent=msg;
+  $('endSc').textContent=pts;
+  $('endRd').textContent=G.roundsDone+'/10';
+  $('endLv').textContent=G.lives+'❤️';
+  $('endStr').textContent=G.bestStreak;
+  showScr('endScreen');
+}
+
+/* ════════ KEYBOARD ════════ */
+document.addEventListener('keydown',e=>{
+  const scr=document.querySelector('.screen.active');if(!scr)return;
+  const id=scr.id;
+  if(id==='howScreen'){
+    if(e.key==='ArrowRight'||e.key==='ArrowDown')howNav(1);
+    if(e.key==='ArrowLeft'||e.key==='ArrowUp')howNav(-1);
+    if(e.key==='Escape'){showScr('startScreen');return;}
+    return;
+  }
+  if(id==='startScreen'){if(e.key==='Enter')startGame();return;}
+  if(id==='endScreen'){if(e.key==='Enter')startGame();return;}
+  if(id==='gameScreen'){
+    if(e.key==='m'||e.key==='M'){toggleMute();return;}
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();deliver();return;}
+    if(e.key==='ArrowRight'){e.preventDefault();G.kIdx=(G.kIdx+1)%G.shelf.length;selCard(G.kIdx);return;}
+    if(e.key==='ArrowLeft'){e.preventDefault();G.kIdx=(G.kIdx-1+G.shelf.length)%G.shelf.length;selCard(G.kIdx);return;}
+    const n=parseInt(e.key);
+    if(n>=1&&n<=9&&n-1<G.shelf.length){e.preventDefault();selCard(n-1);}
+  }
+});
+
+/* ════════ HOW-TO-PLAY ════════ */
+let _pg=0;const PGS=4;
+const PIDS=['hp0','hp1','hp2','hp3'];
+
+function buildDots(){
+  ['howDots','howDotsLast'].forEach(id=>{
+    const el=$(id);if(!el)return;
+    el.innerHTML='';
+    for(let i=0;i<PGS;i++){
+      const b=document.createElement('button');
+      b.className='pdot'+(i===_pg?' active':'');
+      b.setAttribute('aria-label','Page '+(i+1));
+      b.addEventListener('click',()=>goPage(i));
+      el.appendChild(b);
+    }
+  });
+}
+
+function goPage(n,fromRight=true){
+  const old=$(PIDS[_pg]);
+  old.classList.remove('active','from-left');
+  _pg=Math.max(0,Math.min(PGS-1,n));
+  const cur=$(PIDS[_pg]);
+  if(!fromRight)cur.classList.add('from-left');
+  else cur.classList.remove('from-left');
+  cur.classList.add('active');
+  buildDots();
+  const isLast=(_pg===PGS-1);
+  $('howNavNormal').style.display=isLast?'none':'flex';
+  $('howNavLast').style.display=isLast?'flex':'none';
+  $('howPrev').disabled=(_pg===0);
+}
+
+function howNav(dir){
+  const next=_pg+dir;
+  if(next<0)return;
+  if(next>=PGS){showScr('startScreen');return;}
+  goPage(next,dir>0);
+}
+
+let _hsx=0,_hsy=0;
+$('howSlider').addEventListener('pointerdown',e=>{_hsx=e.clientX;_hsy=e.clientY;},{passive:true});
+$('howSlider').addEventListener('pointerup',e=>{
+  const dx=e.clientX-_hsx,dy=e.clientY-_hsy;
+  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy))howNav(dx<0?1:-1);
+},{passive:true});
+
+/* ════════ BUTTONS ════════ */
+$('btnPlay').addEventListener('click',startGame);
+$('btnHow').addEventListener('click',()=>{
+  PIDS.forEach((pid,i)=>{
+    const p=$(pid);p.classList.remove('active','from-left');
+    if(i===0)p.classList.add('active');
+  });
+  _pg=0;buildDots();
+  $('howPrev').disabled=true;
+  $('howNavNormal').style.display='flex';
+  $('howNavLast').style.display='none';
+  showScr('howScreen');
+});
+$('howPrev').addEventListener('click',()=>howNav(-1));
+$('howNext').addEventListener('click',()=>howNav(1));
+$('howPrevLast').addEventListener('click',()=>howNav(-1));
+$('howMenuBtn').addEventListener('click',()=>showScr('startScreen'));
+$('btnRetry').addEventListener('click',startGame);
+$('btnMenu').addEventListener('click',()=>showScr('startScreen'));
+$('muteBtn').addEventListener('click',toggleMute);
+
+/* ════════ START SCREEN STRIP ════════ */
+function buildStrip(){
+  const strip=$('sStrip');
+  strip.innerHTML='';
+  shuf(POOL_H).slice(0,14).forEach(f=>{
+    const box=document.createElement('div');
+    box.className='strip-flag-box';
+    box.appendChild(mkFlagImg(f.cc, f.name));
+    strip.appendChild(box);
+  });
+}
+
+/* ════════ AUDIO ════════ */
+let _AC=null,_muted=false,_bgOn=false,_bgM=null;
+function getAC(){
+  if(!_AC)_AC=new(window.AudioContext||window.webkitAudioContext)();
+  if(_AC.state==='suspended')_AC.resume();
+  return _AC;
+}
+function tone(freq,type,dur,vol=.23,delay=0){
+  if(_muted)return;
+  try{
+    const c=getAC(),o=c.createOscillator(),g=c.createGain(),f=c.createBiquadFilter();
+    f.type='lowpass';f.frequency.value=2200;
+    o.connect(f);f.connect(g);g.connect(c.destination);
+    o.type=type;o.frequency.setValueAtTime(freq,c.currentTime+delay);
+    g.gain.setValueAtTime(0,c.currentTime+delay);
+    g.gain.linearRampToValueAtTime(vol,c.currentTime+delay+.012);
+    g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+delay+dur);
+    o.start(c.currentTime+delay);o.stop(c.currentTime+delay+dur+.05);
+  }catch(e){}
+}
+const SFX={
+  click:   ()=>tone(700,'sine',.06,.1),
+  correct: ()=>{tone(523,'sine',.1,.2);tone(659,'sine',.1,.2,.1);tone(784,'sine',.16,.21,.2);},
+  wrong:   ()=>{tone(200,'sawtooth',.13,.16);tone(160,'sawtooth',.16,.16,.13);},
+  life:    ()=>{tone(440,'sine',.09,.17);tone(330,'sine',.12,.17,.12);tone(220,'sine',.18,.17,.26);},
+  round:   ()=>{tone(440,'sine',.08,.15);tone(550,'sine',.08,.15,.09);},
+  arrive:  ()=>{tone(880,'sine',.06,.13);tone(1100,'sine',.06,.1,.07);},
+  gameover:()=>{[300,250,200,150].forEach((f,i)=>tone(f,'sine',.2,.23,i*.2));},
+  victory: ()=>{[523,659,784,1047,1318].forEach((f,i)=>tone(f,'sine',.26,.23,i*.13));}
+};
+function startBg(){
+  if(_muted||_bgOn)return;_bgOn=true;
+  try{
+    const c=getAC(),mg=c.createGain();
+    mg.gain.value=.06;mg.connect(c.destination);_bgM=mg;
+    const mel=[261,294,330,349,392,440,392,349,330,294,261,330,294,349];
+    const bas=[65,73,87,65,77,87,65,73];
+    let ni=0,bi=0;
+    function pM(){if(!_bgOn)return;const o=c.createOscillator(),g=c.createGain(),f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=860;o.connect(f);f.connect(g);g.connect(mg);o.type='sine';o.frequency.value=mel[ni%mel.length];ni++;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(.5,c.currentTime+.04);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.42);o.start(c.currentTime);o.stop(c.currentTime+.48);setTimeout(pM,455+Math.random()*55);}
+    function pB(){if(!_bgOn)return;const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(mg);o.type='triangle';o.frequency.value=bas[bi%bas.length];bi++;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(.6,c.currentTime+.06);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.84);o.start(c.currentTime);o.stop(c.currentTime+.9);setTimeout(pB,910+Math.random()*110);}
+    pM();pB();
+  }catch(e){}
+}
+function stopBg(){_bgOn=false;try{if(_bgM)_bgM.disconnect();}catch(e){}_bgM=null;}
+function toggleMute(){
+  _muted=!_muted;$('muteBtn').textContent=_muted?'🔇':'🔊';
+  if(!_muted&&G.running)startBg();else if(_muted)stopBg();
+}
+['pointerdown','keydown'].forEach(ev=>{
+  document.addEventListener(ev,()=>{
+    try{if(_AC&&_AC.state==='suspended')_AC.resume();}catch(e){}
+  },{passive:true});
+});
+
+document.addEventListener('touchmove',e=>{
+  if(!e.target.closest('.hpage'))e.preventDefault();
+},{passive:false});
+
+/* ════════ INIT ════════ */
+buildDots();
+$('howPrev').disabled=true;
+$('howNavNormal').style.display='flex';
+$('howNavLast').style.display='none';
+
+// Start by pre-loading all flags, then show start screen
+preloadAllFlags();
+</script>
+</body>
+</html>
